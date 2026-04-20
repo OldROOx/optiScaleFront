@@ -148,8 +148,8 @@ function AuthScreen({ onAuth }) {
             </div>
             {mode === "registro" && (
                 <>
-                  <Field label="Nombre completo" value={nombre}   onChange={setNombre}   placeholder="Dr. Juan Pérez"      style={{ marginBottom: 14 }} />
-                  <Field label="Sucursal"         value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez"   style={{ marginBottom: 14 }} />
+                  <Field label="Nombre completo" value={nombre}   onChange={setNombre}   placeholder="Dr. Juan Pérez"    style={{ marginBottom: 14 }} />
+                  <Field label="Sucursal"         value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez" style={{ marginBottom: 14 }} />
                 </>
             )}
             <Field label="Email"      value={email}    onChange={setEmail}    type="email"    placeholder="correo@optica.com" style={{ marginBottom: 14 }} />
@@ -195,8 +195,8 @@ function PacientesList({ onSelect, onNew }) {
   const [search,    setSearch]    = useState("");
   const [loading,   setLoading]   = useState(true);
 
-  // KEY FIX: setLoading(true) lives INSIDE load, not in useEffect
   const load = useCallback(async () => {
+    await Promise.resolve(); // defer setState past the synchronous effect frame
     setLoading(true);
     try {
       const data = await api.get(`/pacientes/?buscar=${search}`);
@@ -208,7 +208,6 @@ function PacientesList({ onSelect, onNew }) {
     }
   }, [search]);
 
-  // useEffect body calls NO setState — only schedules load via setTimeout
   useEffect(() => {
     const t = setTimeout(load, 300);
     return () => clearTimeout(t);
@@ -428,8 +427,8 @@ function PacienteDetail({ paciente, onBack, setToast }) {
   const [evolucion, setEvolucion] = useState(null);
   const [showEvo,   setShowEvo]   = useState(false);
 
-  // KEY FIX: setLoading(true) lives INSIDE load, not in useEffect
   const load = useCallback(async () => {
+    await Promise.resolve(); // defer setState past the synchronous effect frame
     setLoading(true);
     try {
       const data = await api.get(`/consultas/paciente/${paciente.id}`);
@@ -441,7 +440,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
     }
   }, [paciente.id]);
 
-  // useEffect body calls NO setState — only calls load (which is async)
   useEffect(() => {
     load();
   }, [load]);
