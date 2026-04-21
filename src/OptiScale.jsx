@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ───
 const API = "http://127.0.0.1:8000/api";
@@ -30,8 +30,8 @@ const api = {
   },
   post: (p, body) => api.req(p, { method: "POST", body: JSON.stringify(body) }),
   put:  (p, body) => api.req(p, { method: "PUT",  body: JSON.stringify(body) }),
-  get:  (p)        => api.req(p),
-  del:  (p)        => api.req(p, { method: "DELETE" }),
+  get:  (p)       => api.req(p),
+  del:  (p)       => api.req(p, { method: "DELETE" }),
 };
 
 // ─── ICONS ───
@@ -176,24 +176,19 @@ function Sidebar({ user, onLogout }) {
 function PacientesList({ onSelect, onNew }) {
   const [pacientes, setPacientes] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const data = await api.get(`/pacientes/?buscar=${search}`);
-      setPacientes(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setPacientes(data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, [search]);
 
-  useEffect(() => {
-    const t = setTimeout(load, 300);
-    return () => clearTimeout(t);
-  }, [load]);
+  useEffect(() => { const t = setTimeout(load, 300); return () => clearTimeout(t); }, [load]);
 
   return (
       <div>
@@ -228,7 +223,7 @@ function PacientesList({ onSelect, onNew }) {
                       <div style={{ fontSize: 15, fontWeight: 700, color: T.white }}>{p.nombre}</div>
                       <div style={{ fontSize: 12, color: T.muted, marginTop: 3, display: "flex", gap: 12 }}>
                         {p.expediente && <span>Exp: {p.expediente}</span>}
-                        <span>{p?.total_consultas ?? 0} consulta{p?.total_consultas !== 1 ? "s" : ""}</span>
+                        <span>{p.total_consultas || 0} consulta{p.total_consultas !== 1 ? "s" : ""}</span>
                       </div>
                     </div>
                     <span style={{ color: T.dim }}>{Icon.chevron}</span>
@@ -240,7 +235,7 @@ function PacientesList({ onSelect, onNew }) {
   );
 }
 
-// ─── PACIENTE FORM ───
+// ─── PACIENTE FORM (crear y editar) ───
 function PacienteForm({ paciente, onSave, onCancel }) {
   const [nombre, setNombre] = useState(paciente?.nombre || "");
   const [telefono, setTelefono] = useState(paciente?.telefono || "");
@@ -400,35 +395,29 @@ function ConsultaForm({ pacienteId, onSave, onCancel }) {
 function PacienteDetail({ paciente, onBack, setToast }) {
   const [pacienteData, setPacienteData] = useState(paciente);
   const [consultas, setConsultas] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   const [evolucion, setEvolucion] = useState(null);
   const [showEvo, setShowEvo] = useState(false);
 
   const load = useCallback(async () => {
+    await Promise.resolve();
     setLoading(true);
     try {
       const data = await api.get(`/consultas/paciente/${pacienteData.id}`);
-      setConsultas(data || []);
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
+      setConsultas(data);
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   }, [pacienteData.id]);
 
-  useEffect(() => {
-    load();
-  }, [load]);
+  useEffect(() => { void (async () => { await load(); })(); }, [load]);
 
   const reloadPaciente = async () => {
     try {
       const updated = await api.get(`/pacientes/${pacienteData.id}`);
       setPacienteData(updated);
-    } catch (err) {
-      console.warn("No se pudo actualizar");
-    }
+    } catch (e) { void e; }
   };
 
   const verEvolucion = async () => {
@@ -440,7 +429,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
   };
 
   const eliminar = async (id) => {
-    if (!window.confirm("¿Eliminar esta consulta?")) return;
+    if (!confirm("¿Eliminar esta consulta?")) return;
     try {
       await api.del(`/consultas/${id}`);
       load();
@@ -448,6 +437,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
     } catch (err) { setToast({ msg: err.message, type: "error" }); }
   };
 
+  // ── Sub-vistas ──
   if (showEvo && evolucion) return <EvolucionView data={evolucion} onBack={() => setShowEvo(false)} />;
 
   if (showEdit) return (
@@ -473,6 +463,8 @@ function PacienteDetail({ paciente, onBack, setToast }) {
   return (
       <div>
         <button onClick={onBack} style={{ ...s.btnGhost, marginBottom: 16 }}>{Icon.back} Pacientes</button>
+
+        {/* Header del paciente */}
         <div style={{ ...s.card, padding: "28px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #141a4a 100%)`, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
             <div>
@@ -485,6 +477,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
               {pacienteData.notas && <p style={{ fontSize: 12, color: T.dim, marginTop: 8, fontStyle: "italic" }}>{pacienteData.notas}</p>}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              {/* BOTÓN EDITAR DATOS */}
               <button onClick={() => setShowEdit(true)} style={{ ...s.btnGhost, padding: "10px 16px", fontSize: 13 }}>
                 {Icon.edit} Editar datos
               </button>
@@ -500,9 +493,26 @@ function PacienteDetail({ paciente, onBack, setToast }) {
           </div>
         </div>
 
+        {/* Aviso 1 consulta */}
+        {consultas.length === 1 && (
+            <div style={{ ...s.card, marginBottom: 16, padding: "14px 20px", background: T.yellowSoft, borderColor: `${T.yellow}44`, display: "flex", alignItems: "center", gap: 10 }}>
+              <span style={{ fontSize: 18 }}>🟡</span>
+              <span style={{ fontSize: 13, color: T.yellow }}>
+            Registra <strong>1 consulta más</strong> para habilitar el reporte de evolución visual.
+          </span>
+            </div>
+        )}
+
         <h2 style={{ fontSize: 16, fontWeight: 700, color: T.white, marginBottom: 14 }}>Historial ({consultas.length})</h2>
+
         {loading ? (
             <div style={{ textAlign: "center", padding: 40, color: T.dim }}>Cargando...</div>
+        ) : consultas.length === 0 ? (
+            <div style={{ ...s.card, textAlign: "center", padding: 50 }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
+              <p style={{ color: T.muted, fontSize: 14, fontWeight: 600 }}>Sin consultas registradas</p>
+              <button onClick={() => setShowForm(true)} style={{ ...s.btn, marginTop: 14, fontSize: 13 }}>{Icon.plus} Primera consulta</button>
+            </div>
         ) : (
             <div style={{ display: "grid", gap: 10 }}>
               {consultas.map((c) => (
@@ -523,6 +533,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
                               </div>
                           ))}
                         </div>
+                        {c.observaciones && <div style={{ fontSize: 12, color: T.muted, marginTop: 8, fontStyle: "italic" }}>{c.observaciones.substring(0, 120)}</div>}
                       </div>
                       <button onClick={() => eliminar(c.id)} style={s.btnDanger}>{Icon.trash}</button>
                     </div>
@@ -537,7 +548,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
 // ─── EVO HELPERS ───
 function getStatusInfo(st) {
   if (st === "estable") return { l: "Mejoró / Estable", e: "✅", c: T.green };
-  if (st === "leve")    return { l: "Aumento leve",      e: "🟡", c: T.yellow };
+  if (st === "leve")    return { l: "Aumento leve",     e: "🟡", c: T.yellow };
   if (st === "notable") return { l: "Aumento notable",  e: "🔴", c: T.red };
   return { l: "Sin cambio", e: "✅", c: T.green };
 }
@@ -625,6 +636,7 @@ function EyeCard({ label, d }) {
   );
 }
 
+// ─── NUEVA: GRÁFICA COMPARATIVA ───
 function GraficaComparativa({ od, oi }) {
   const datos = [
     { label: "Esfera OD",   ant: od.esf_anterior, act: od.esf_actual, status: od.status_esfera },
@@ -636,69 +648,377 @@ function GraficaComparativa({ od, oi }) {
 
   return (
       <div style={s.card}>
-        <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 22 }}>📊 Comparativa Visual</h3>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 22 }}>
+          📊 Comparativa Visual — Anterior vs Actual
+        </h3>
         {datos.map((d, i) => {
-          const info = getStatusInfo(d.status);
+          const info  = getStatusInfo(d.status);
+          const antW  = (Math.abs(d.ant) / maxVal) * 100;
+          const actW  = (Math.abs(d.act) / maxVal) * 100;
           const delta = d.act - d.ant;
           return (
               <div key={i} style={{ marginBottom: 24 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontSize: 13, color: T.white, fontWeight: 700 }}>{d.label}</span>
-                  <span style={{ fontSize: 12, fontFamily: T.mono, color: delta > 0 ? T.red : delta < 0 ? T.green : T.muted }}>
-                {delta >= 0 ? "+" : ""}{delta.toFixed(2)} D
-              </span>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: 12, fontFamily: T.mono, color: delta > 0 ? T.red : delta < 0 ? T.green : T.muted, fontWeight: 700 }}>
+                  {delta >= 0 ? "+" : ""}{delta.toFixed(2)} D
+                </span>
+                    <EvoBadge status={d.status} />
+                  </div>
                 </div>
                 {[
-                  { lb: "Ant.", v: d.ant, cl: `${T.accent}44` },
-                  { lb: "Act.", v: d.act, cl: info.c },
+                  { lb: "Anterior", v: d.ant, w: antW, color: `${T.accent}44` },
+                  { lb: "Actual",   v: d.act, w: actW, color: info.c },
                 ].map((bar) => (
                     <div key={bar.lb} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
-                      <span style={{ fontSize: 10, color: T.dim, width: 30 }}>{bar.lb}</span>
-                      <div style={{ flex: 1, height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)" }}>
-                        <div style={{ width: `${(Math.abs(bar.v) / maxVal) * 100}%`, height: "100%", borderRadius: 7, background: bar.cl }} />
+                      <span style={{ fontSize: 10, color: T.dim, width: 52, textAlign: "right" }}>{bar.lb}</span>
+                      <div style={{ flex: 1, height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)", overflow: "hidden" }}>
+                        <div style={{ width: `${Math.max(bar.w, 2)}%`, height: "100%", borderRadius: 7, background: bar.color, transition: "width 0.9s ease" }} />
                       </div>
+                      <span style={{ fontSize: 12, fontFamily: T.mono, color: bar.lb === "Actual" ? T.white : T.muted, fontWeight: 600, width: 52 }}>
+                  {bar.v >= 0 ? "+" : ""}{bar.v.toFixed(2)}
+                </span>
                     </div>
                 ))}
               </div>
           );
         })}
+        <div style={{ display: "flex", gap: 20, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
+          {[{ c: `${T.accent}44`, l: "Consulta anterior" }, { c: T.accent, l: "Consulta actual" }].map((leg) => (
+              <div key={leg.l} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <div style={{ width: 16, height: 7, borderRadius: 4, background: leg.c }} />
+                <span style={{ fontSize: 11, color: T.dim }}>{leg.l}</span>
+              </div>
+          ))}
+        </div>
       </div>
   );
 }
 
-function InterpretacionClinica({ paciente, od, oi, consulta_anterior, consulta_actual }) {
+// ─── NUEVA: GENERADOR DE TEXTO CLÍNICO ───
+function generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual) {
   const overallStatus = getWorstStatus(od.status_esfera, od.status_cilindro, oi.status_esfera, oi.status_cilindro);
-  const info = getStatusInfo(overallStatus);
+  const nombre = paciente.nombre;
+  const fmtF = (d) => new Date(d + "T12:00:00").toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+  const fechaAnt = fmtF(consulta_anterior.fecha_consulta);
+  const fechaAct = fmtF(consulta_actual.fecha_consulta);
+  const sg = (v) => (v >= 0 ? "+" : "") + v.toFixed(2);
+
+  if (overallStatus === "estable") {
+    return {
+      icono: "✅", colorBorde: T.green, colorFondo: T.greenSoft,
+      titulo: "Visión estable — Sin cambios significativos",
+      analisis: `Durante el período evaluado (${fechaAnt} → ${fechaAct}), la graduación de ${nombre} se ha mantenido dentro de rangos estables. No se detectan variaciones clínicamente significativas: OD Esfera ${sg(od.delta_esfera)} D, Cilindro ${sg(od.delta_cilindro)} D — OI Esfera ${sg(oi.delta_esfera)} D, Cilindro ${sg(oi.delta_cilindro)} D.`,
+      recomendacion: "Continuar con la prescripción actual. Programar revisión de rutina en 12 meses, o antes si el paciente reporta cambios en la agudeza visual o molestias oculares.",
+    };
+  } else if (overallStatus === "leve") {
+    return {
+      icono: "🟡", colorBorde: T.yellow, colorFondo: T.yellowSoft,
+      titulo: "Cambio leve detectado — Seguimiento recomendado",
+      analisis: `Entre el ${fechaAnt} y el ${fechaAct}, se detectan cambios leves en la graduación de ${nombre}. Ojo derecho: Esfera ${sg(od.delta_esfera)} D, Cilindro ${sg(od.delta_cilindro)} D. Ojo izquierdo: Esfera ${sg(oi.delta_esfera)} D, Cilindro ${sg(oi.delta_cilindro)} D. Estos valores corresponden al rango de progresión natural esperado.`,
+      recomendacion: "Evaluar si se requiere actualización de la prescripción óptica. Se recomienda programar la siguiente revisión en 6 meses para monitorear la progresión.",
+    };
+  } else {
+    return {
+      icono: "🔴", colorBorde: T.red, colorFondo: T.redSoft,
+      titulo: "Aumento notable — Atención requerida",
+      analisis: `Se detecta un aumento significativo en la graduación de ${nombre} entre el ${fechaAnt} y el ${fechaAct}. Ojo derecho: Esfera ${sg(od.delta_esfera)} D, Cilindro ${sg(od.delta_cilindro)} D. Ojo izquierdo: Esfera ${sg(oi.delta_esfera)} D, Cilindro ${sg(oi.delta_cilindro)} D. Este nivel de cambio supera el umbral esperable y requiere evaluación profesional.`,
+      recomendacion: "Actualizar la prescripción a la brevedad posible. Considerar estudios complementarios (topografía corneal, fondo de ojo) para descartar condiciones subyacentes. Próxima revisión en 3 meses.",
+    };
+  }
+}
+
+// ─── NUEVA: TARJETA DE INTERPRETACIÓN ───
+function InterpretacionClinica({ paciente, od, oi, consulta_anterior, consulta_actual }) {
+  const interp = generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual);
   return (
-      <div style={{ ...s.card, borderLeft: `4px solid ${info.c}`, background: `${info.c}11` }}>
-        <div style={{ fontSize: 16, fontWeight: 800, color: T.white, marginBottom: 8 }}>{info.e} Estado: {info.l}</div>
-        <p style={{ fontSize: 13, color: T.text, lineHeight: 1.6 }}>Análisis para {paciente.nombre} basado en consultas del {consulta_anterior.fecha_consulta} al {consulta_actual.fecha_consulta}.</p>
+      <div style={{ ...s.card, borderLeft: `4px solid ${interp.colorBorde}`, background: interp.colorFondo, padding: "22px 24px" }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: T.white, marginBottom: 10 }}>
+          {interp.icono} {interp.titulo}
+        </div>
+        <p style={{ fontSize: 13, color: T.text, lineHeight: 1.78, marginBottom: 14 }}>{interp.analisis}</p>
+        <div style={{ background: "rgba(0,0,0,0.25)", borderRadius: 8, padding: "10px 14px", fontSize: 12, color: T.muted, lineHeight: 1.6 }}>
+          <span style={{ fontWeight: 700, color: T.white }}>📋 Recomendación: </span>
+          {interp.recomendacion}
+        </div>
       </div>
   );
 }
 
+// ─── NUEVA: EXPORTAR PDF ───
 function exportarPDF(data) {
-  // Simulación de exportación simplificada para el archivo completo
-  window.print();
+  const { paciente, consulta_anterior, consulta_actual, od, oi } = data;
+  const interp  = generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual);
+  const fmtDate = (d) => new Date(d + "T12:00:00").toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" });
+  const fmtNum  = (v) => (v >= 0 ? "+" : "") + v.toFixed(2);
+  const sBadge  = (st) => {
+    const cls = st === "notable" ? "red" : st === "leve" ? "yellow" : "green";
+    const txt = st === "notable" ? "🔴 Notable" : st === "leve" ? "🟡 Leve" : "✅ Estable";
+    return `<span class="badge badge-${cls}">${txt}</span>`;
+  };
+  const dxActivos = DX_LIST.filter((d) => consulta_actual.diagnostico[d.key]).map((d) => d.label);
+  const ic = interp.colorBorde === T.green ? "green" : interp.colorBorde === T.yellow ? "yellow" : "red";
+
+  const eyeSection = (label, d) => {
+    const rows = [
+      { l: "Esfera",   ant: d.esf_anterior, act: d.esf_actual, delta: d.delta_esfera,   pct: d.pct_esfera,   st: d.status_esfera },
+      { l: "Cilindro", ant: d.cil_anterior, act: d.cil_actual, delta: d.delta_cilindro, pct: d.pct_cilindro, st: d.status_cilindro },
+    ];
+    const mv = Math.max(...rows.flatMap((r) => [Math.abs(r.ant), Math.abs(r.act)]), 0.5);
+    return `<div class="eye-card">
+      <div class="eye-label">${label}</div>
+      ${rows.map((r) => {
+      const aW = Math.max((Math.abs(r.ant) / mv) * 100, 2);
+      const bW = Math.max((Math.abs(r.act) / mv) * 100, 2);
+      return `<div class="metric">
+          <div class="metric-hdr"><span class="metric-name">${r.l}</span>${sBadge(r.st)}</div>
+          <div class="brow"><span class="blbl">Anterior</span><div class="bouter"><div class="bant" style="width:${aW}%"></div></div><span class="bval muted">${fmtNum(r.ant)}</span></div>
+          <div class="brow"><span class="blbl">Actual</span><div class="bouter"><div class="bact" style="width:${bW}%"></div></div><span class="bval">${fmtNum(r.act)}</span></div>
+          <div class="delta">Δ <b>${r.delta >= 0 ? "+" : ""}${r.delta.toFixed(2)} D</b>${r.pct != null ? ` · ${r.pct.toFixed(1)}% cambio` : ""}</div>
+        </div>`;
+    }).join("")}
+    </div>`;
+  };
+
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+<title>Reporte — ${paciente.nombre}</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Arial,sans-serif;color:#1a1a2e;padding:28px 34px;font-size:13px;line-height:1.5}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:3px solid #2d7aff;padding-bottom:14px;margin-bottom:20px}
+.brand{font-size:22px;font-weight:800;letter-spacing:-1px}.brand span{color:#2d7aff}
+.brand-sub{font-size:10px;color:#888;margin-top:3px;text-transform:uppercase;letter-spacing:2px}
+.meta{text-align:right;font-size:11px;color:#555}
+.meta .pname{font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:4px}
+h2{font-size:14px;font-weight:700;margin:18px 0 10px;padding-bottom:5px;border-bottom:1px solid #e0e0e0}
+.interp{border-left:4px solid #2d7aff;padding:13px 17px;border-radius:0 10px 10px 0;margin-bottom:18px}
+.interp.green{border-color:#00875a;background:#f0fff8}.interp.yellow{border-color:#b87c00;background:#fffdf0}.interp.red{border-color:#cc0000;background:#fff5f5}
+.ititle{font-size:15px;font-weight:800;margin-bottom:7px}
+.itext{font-size:12px;color:#333;margin-bottom:10px}
+.irec{font-size:11px;color:#555;font-style:italic;background:rgba(0,0,0,.05);padding:8px 10px;border-radius:6px}
+.eye-grid{display:flex;gap:14px;margin-bottom:14px}
+.eye-card{flex:1;border:1px solid #dde4f0;border-radius:10px;padding:14px 16px;background:#f8f9ff}
+.eye-label{font-size:13px;font-weight:700;color:#2d7aff;margin-bottom:12px}
+.metric{margin-bottom:14px}
+.metric-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.metric-name{font-size:12px;font-weight:700;color:#333}
+.badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px}
+.badge-green{background:#e0fff5;color:#00875a}.badge-yellow{background:#fffbe0;color:#b87c00}.badge-red{background:#ffe0e0;color:#cc0000}
+.brow{display:flex;align-items:center;gap:8px;margin-bottom:3px}
+.blbl{font-size:10px;color:#999;width:48px;text-align:right}
+.bouter{flex:1;height:10px;background:#e8eeff;border-radius:5px;overflow:hidden}
+.bant{height:100%;background:#9bbcff;border-radius:5px}.bact{height:100%;background:#2d7aff;border-radius:5px}
+.bval{font-size:11px;font-weight:600;width:46px;color:#1a1a2e;font-family:monospace}.bval.muted{color:#999}
+.delta{font-size:11px;color:#555;margin-top:4px;text-align:right}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:14px}
+thead th{background:#2d7aff;color:#fff;padding:7px 6px;text-align:center;font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+tbody td{padding:7px 6px;text-align:center;border-bottom:1px solid #eee}
+tbody tr:nth-child(even){background:#f8f9ff}
+.tpos{color:#cc0000;font-weight:700}.tneg{color:#00875a;font-weight:700}
+.dx-list{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.dx-tag{background:#e8eeff;color:#2d7aff;border-radius:6px;padding:4px 12px;font-size:11px;font-weight:600}
+.obs{background:#f8f9ff;border-left:3px solid #2d7aff;padding:10px 14px;border-radius:0 8px 8px 0;font-size:12px;color:#333;margin-bottom:14px}
+.glos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.gi{background:#f0f4ff;padding:7px 10px;border-radius:6px}
+.gk{font-size:11px;font-weight:700;color:#2d7aff}.gv{font-size:10px;color:#666;margin-top:1px}
+.leg{display:flex;gap:16px;margin-top:6px}.ldot{display:inline-block;width:14px;height:6px;border-radius:3px;margin-right:5px;vertical-align:middle}
+.footer{margin-top:24px;padding-top:10px;border-top:1px solid #e0e0e0;display:flex;justify-content:space-between;font-size:10px;color:#aaa}
+@media print{body{padding:16px}@page{margin:1cm;size:A4}}
+</style></head><body>
+<div class="hdr">
+  <div><div class="brand">OPTI<span>SCALE</span></div><div class="brand-sub">Sistema de Gestión Visual Clínica</div></div>
+  <div class="meta">
+    <div class="pname">${paciente.nombre}</div>
+    ${paciente.expediente ? `<div>Expediente: ${paciente.expediente}</div>` : ""}
+    ${paciente.telefono   ? `<div>Tel: ${paciente.telefono}</div>` : ""}
+    <div style="margin-top:4px">Período: <b>${fmtDate(consulta_anterior.fecha_consulta)}</b> → <b>${fmtDate(consulta_actual.fecha_consulta)}</b></div>
+    <div>Generado: ${new Date().toLocaleDateString("es-MX", { year: "numeric", month: "long", day: "numeric" })}</div>
+  </div>
+</div>
+<div class="interp ${ic}">
+  <div class="ititle">${interp.icono} ${interp.titulo}</div>
+  <div class="itext">${interp.analisis}</div>
+  <div class="irec">📋 Recomendación: ${interp.recomendacion}</div>
+</div>
+<h2>Graduación — Comparativa Visual</h2>
+<div class="eye-grid">${eyeSection("👁 OD — Ojo Derecho", od)}${eyeSection("👁 OI — Ojo Izquierdo", oi)}</div>
+<div class="leg">
+  <span><span class="ldot" style="background:#9bbcff"></span>Consulta anterior</span>
+  <span><span class="ldot" style="background:#2d7aff"></span>Consulta actual</span>
+</div>
+<h2>Tabla Resumen Numérico</h2>
+<table>
+  <thead><tr>
+    <th>Parámetro</th><th>OD Ant.</th><th>OD Act.</th><th>Δ OD</th><th>% OD</th>
+    <th>OI Ant.</th><th>OI Act.</th><th>Δ OI</th><th>% OI</th>
+  </tr></thead>
+  <tbody>
+    <tr>
+      <td><b>Esfera</b></td>
+      <td>${fmtNum(od.esf_anterior)}</td><td>${fmtNum(od.esf_actual)}</td>
+      <td class="${od.delta_esfera > 0 ? "tpos" : od.delta_esfera < 0 ? "tneg" : ""}">${fmtNum(od.delta_esfera)}</td>
+      <td>${od.pct_esfera != null ? od.pct_esfera.toFixed(1) + "%" : "—"}</td>
+      <td>${fmtNum(oi.esf_anterior)}</td><td>${fmtNum(oi.esf_actual)}</td>
+      <td class="${oi.delta_esfera > 0 ? "tpos" : oi.delta_esfera < 0 ? "tneg" : ""}">${fmtNum(oi.delta_esfera)}</td>
+      <td>${oi.pct_esfera != null ? oi.pct_esfera.toFixed(1) + "%" : "—"}</td>
+    </tr>
+    <tr>
+      <td><b>Cilindro</b></td>
+      <td>${fmtNum(od.cil_anterior)}</td><td>${fmtNum(od.cil_actual)}</td>
+      <td class="${od.delta_cilindro > 0 ? "tpos" : od.delta_cilindro < 0 ? "tneg" : ""}">${fmtNum(od.delta_cilindro)}</td>
+      <td>${od.pct_cilindro != null ? od.pct_cilindro.toFixed(1) + "%" : "—"}</td>
+      <td>${fmtNum(oi.cil_anterior)}</td><td>${fmtNum(oi.cil_actual)}</td>
+      <td class="${oi.delta_cilindro > 0 ? "tpos" : oi.delta_cilindro < 0 ? "tneg" : ""}">${fmtNum(oi.delta_cilindro)}</td>
+      <td>${oi.pct_cilindro != null ? oi.pct_cilindro.toFixed(1) + "%" : "—"}</td>
+    </tr>
+  </tbody>
+</table>
+${dxActivos.length > 0 ? `<h2>Diagnóstico Actual</h2><div class="dx-list">${dxActivos.map((d) => `<span class="dx-tag">✓ ${d}</span>`).join("")}</div>` : ""}
+${consulta_actual.observaciones ? `<h2>Observaciones Clínicas</h2><div class="obs">${consulta_actual.observaciones}</div>` : ""}
+<h2>Glosario</h2>
+<div class="glos">
+  <div class="gi"><div class="gk">SPH (Esfera)</div><div class="gv">Potencia principal: (−) miopía · (+) hipermetropía</div></div>
+  <div class="gi"><div class="gk">CYL (Cilindro)</div><div class="gv">Corrección del astigmatismo</div></div>
+  <div class="gi"><div class="gk">AXIS (Eje)</div><div class="gv">Orientación del astigmatismo (0°–180°)</div></div>
+  <div class="gi"><div class="gk">ADD (Adición)</div><div class="gv">Potencia extra para bifocales / progresivos</div></div>
+  <div class="gi"><div class="gk">Δ (Delta)</div><div class="gv">Diferencia entre consulta anterior y actual</div></div>
+  <div class="gi"><div class="gk">Semáforo</div><div class="gv">✅ Estable · 🟡 Leve (&lt;1D) · 🔴 Notable (≥1D)</div></div>
+</div>
+<div class="footer">
+  <span>OptiScale — Sistema de Gestión Visual Clínica</span>
+  <span>Reporte generado: ${new Date().toLocaleString("es-MX")}</span>
+</div>
+<script>window.onload=function(){window.print();};</script>
+</body></html>`;
+
+  const win = window.open("", "_blank");
+  if (win) { win.document.write(html); win.document.close(); }
+  else alert("Activa ventanas emergentes en tu navegador para exportar el PDF.");
 }
 
+// ─── EVOLUCIÓN VIEW ───
 function EvolucionView({ data, onBack }) {
   const { paciente, consulta_anterior, consulta_actual, od, oi } = data;
+
   return (
       <div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+        {/* Toolbar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
           <button onClick={onBack} style={s.btnGhost}>{Icon.back} Volver</button>
-          <button onClick={() => exportarPDF(data)} style={{ ...s.btn, background: T.red }}>{Icon.pdf} Exportar PDF</button>
+          <button onClick={() => exportarPDF(data)}
+                  style={{ ...s.btn, background: "linear-gradient(135deg, #e74c3c, #c0392b)", fontSize: 13, padding: "10px 20px" }}>
+            {Icon.pdf} Exportar PDF
+          </button>
         </div>
-        <div style={{ ...s.card, textAlign: "center" }}>
-          <h2 style={{ color: T.white }}>Evolución de {paciente.nombre}</h2>
+
+        {/* Header */}
+        <div style={{ ...s.card, textAlign: "center", padding: "28px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #161e55 100%)`, borderColor: T.borderLight }}>
+          <div style={{ fontSize: 10, color: T.dim, textTransform: "uppercase", letterSpacing: 3, marginBottom: 6 }}>Reporte de Evolución Visual</div>
+          <div style={{ fontSize: 24, fontWeight: 800, color: T.white }}>{paciente.nombre}</div>
+          <div style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>
+            {consulta_anterior.fecha_consulta} → {consulta_actual.fecha_consulta}
+            {consulta_actual.sucursal && ` · ${consulta_actual.sucursal}`}
+          </div>
         </div>
-        <InterpretacionClinica paciente={paciente} od={od} oi={oi} consulta_anterior={consulta_anterior} consulta_actual={consulta_actual} />
+
+        {/* Interpretación clínica automática */}
+        <InterpretacionClinica
+            paciente={paciente} od={od} oi={oi}
+            consulta_anterior={consulta_anterior}
+            consulta_actual={consulta_actual}
+        />
+
+        {/* Eye cards */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <EyeCard label="Ojo Derecho" d={od} />
-          <EyeCard label="Ojo Izquierdo" d={oi} />
+          <EyeCard label="OD — Ojo Derecho"   d={od} />
+          <EyeCard label="OI — Ojo Izquierdo" d={oi} />
         </div>
+
+        {/* Gráfica comparativa */}
         <GraficaComparativa od={od} oi={oi} />
+
+        {/* Tabla numérica */}
+        <div style={s.card}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 14 }}>Resumen Numérico</h3>
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead>
+              <tr>
+                {["Parámetro","OD Ant.","OD Act.","Δ OD","% OD","OI Ant.","OI Act.","Δ OI","% OI"].map((h) => (
+                    <th key={h} style={{ padding: "10px 6px", textAlign: "center", fontSize: 10, fontWeight: 700, color: T.dim, textTransform: "uppercase", letterSpacing: 0.5, borderBottom: `1px solid ${T.border}` }}>{h}</th>
+                ))}
+              </tr>
+              </thead>
+              <tbody>
+              {[
+                { l: "Esfera",   odA: od.esf_anterior, odN: od.esf_actual, odD: od.delta_esfera,   odP: od.pct_esfera,   oiA: oi.esf_anterior, oiN: oi.esf_actual, oiD: oi.delta_esfera,   oiP: oi.pct_esfera },
+                { l: "Cilindro", odA: od.cil_anterior, odN: od.cil_actual, odD: od.delta_cilindro, odP: od.pct_cilindro, oiA: oi.cil_anterior, oiN: oi.cil_actual, oiD: oi.delta_cilindro, oiP: oi.pct_cilindro },
+              ].map((r, i) => (
+                  <tr key={i}>
+                    <td style={{ padding: "10px 6px", fontWeight: 700, color: T.text }}>{r.l}</td>
+                    {[
+                      { v: r.odA }, { v: r.odN }, { v: r.odD, d: true }, { v: r.odP, d: true, p: true },
+                      { v: r.oiA }, { v: r.oiN }, { v: r.oiD, d: true }, { v: r.oiP, d: true, p: true },
+                    ].map((c, j) => (
+                        <td key={j} style={{ padding: "10px 6px", textAlign: "center", fontFamily: T.mono, fontSize: 12, color: c.d ? (c.v > 0 ? T.red : c.v < 0 ? T.green : T.muted) : T.text, fontWeight: c.d ? 700 : 400 }}>
+                          {c.v === null || c.v === undefined ? "—" : `${c.d && c.v > 0 ? "+" : ""}${c.v.toFixed(c.p ? 1 : 2)}${c.p ? "%" : ""}`}
+                        </td>
+                    ))}
+                  </tr>
+              ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Diagnóstico */}
+        {Object.values(consulta_actual.diagnostico).some(Boolean) && (
+            <div style={s.card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 12 }}>Diagnóstico Actual</h3>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {DX_LIST.filter((d) => consulta_actual.diagnostico[d.key]).map((d) => (
+                    <span key={d.key} style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: T.accentSoft, color: T.accent, border: `1px solid ${T.accent}33` }}>✓ {d.label}</span>
+                ))}
+              </div>
+            </div>
+        )}
+
+        {/* Observaciones */}
+        {consulta_actual.observaciones && (
+            <div style={s.card}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 8 }}>Observaciones</h3>
+              <p style={{ fontSize: 14, color: T.text, lineHeight: 1.7, margin: 0 }}>{consulta_actual.observaciones}</p>
+            </div>
+        )}
+
+        {/* Glosario */}
+        <div style={{ ...s.card, background: "rgba(255,255,255,0.015)" }}>
+          <h3 style={{ fontSize: 12, fontWeight: 700, color: T.dim, marginTop: 0, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Glosario</h3>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+            {[
+              ["SPH", "Potencia principal: (−) miopía · (+) hipermetropía"],
+              ["CYL", "Corrección del astigmatismo"],
+              ["AXIS", "Orientación del astigmatismo (0°–180°)"],
+              ["ADD", "Potencia extra para bifocales / progresivos"],
+              ["Δ", "Diferencia entre consulta anterior y actual"],
+              ["Semáforo", "✅ Estable · 🟡 Leve (<1D) · 🔴 Notable (≥1D)"],
+            ].map(([t, desc]) => (
+                <div key={t} style={{ padding: "8px 10px", borderRadius: 8, background: T.bg }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: T.accent }}>{t}</div>
+                  <div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}>{desc}</div>
+                </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Botón PDF inferior */}
+        <div style={{ textAlign: "center", paddingBottom: 32 }}>
+          <button onClick={() => exportarPDF(data)}
+                  style={{ ...s.btn, background: "linear-gradient(135deg, #e74c3c, #c0392b)", padding: "12px 36px", fontSize: 14 }}>
+            {Icon.pdf} Exportar Reporte Completo en PDF
+          </button>
+        </div>
       </div>
   );
 }
@@ -717,26 +1037,46 @@ export default function OptiScaleApp() {
       api.token = token;
       api.get("/auth/me")
           .then((u) => { setUser(u); setAuthChecked(true); })
-          .catch(() => { localStorage.removeItem("optiscale_token"); setAuthChecked(true); });
+          .catch(() => { localStorage.removeItem("optiscale_token"); api.token = null; setAuthChecked(true); });
     } else {
-      setAuthChecked(true);
+      const t = setTimeout(() => setAuthChecked(true), 0);
+      return () => clearTimeout(t);
     }
   }, []);
+
+  const handleToastClose = useCallback(() => setToast(null), []);
 
   const logout = () => {
     localStorage.removeItem("optiscale_token");
     api.token = null;
     setUser(null);
+    setSelectedPaciente(null);
   };
 
-  if (!authChecked) return <div style={{ color: T.muted, padding: 40 }}>Cargando aplicación...</div>;
+  if (!authChecked) return (
+      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font, color: T.muted }}>
+        Cargando...
+      </div>
+  );
+
   if (!user) return <AuthScreen onAuth={setUser} />;
 
   let content;
   if (showNewPaciente) {
-    content = <PacienteForm onSave={() => { setShowNewPaciente(false); setToast({ msg: "Paciente creado", type: "success" }); }} onCancel={() => setShowNewPaciente(false)} />;
+    content = (
+        <PacienteForm
+            onSave={() => { setShowNewPaciente(false); setToast({ msg: "Paciente creado exitosamente", type: "success" }); }}
+            onCancel={() => setShowNewPaciente(false)}
+        />
+    );
   } else if (selectedPaciente) {
-    content = <PacienteDetail paciente={selectedPaciente} onBack={() => setSelectedPaciente(null)} setToast={setToast} />;
+    content = (
+        <PacienteDetail
+            paciente={selectedPaciente}
+            onBack={() => setSelectedPaciente(null)}
+            setToast={setToast}
+        />
+    );
   } else {
     content = <PacientesList onSelect={setSelectedPaciente} onNew={() => setShowNewPaciente(true)} />;
   }
@@ -744,12 +1084,20 @@ export default function OptiScaleApp() {
   return (
       <div style={{ fontFamily: T.font, background: T.bg, minHeight: "100vh", color: T.text }}>
         <Sidebar user={user} onLogout={logout} />
-        <main style={{ marginLeft: 240, padding: "28px 36px" }}>{content}</main>
-        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+        <main style={{ marginLeft: 240, padding: "28px 36px", minHeight: "100vh" }}>{content}</main>
+        {toast && <Toast msg={toast.msg} type={toast.type} onClose={handleToastClose} />}
         <style>{`
-        * { box-sizing: border-box; }
-        body { margin: 0; background: ${T.bg}; }
-        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        * { box-sizing: border-box; margin: 0; }
+        body { margin: 0; padding: 0; background: ${T.bg}; }
+        ::selection { background: ${T.accent}44; }
+        @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { opacity: 1; }
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
+        @media (max-width: 900px) {
+          main { margin-left: 0 !important; padding: 16px !important; }
+          div[style*="width: 240"] { display: none !important; }
+        }
       `}</style>
       </div>
   );
