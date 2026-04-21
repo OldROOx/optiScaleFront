@@ -1,30 +1,19 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ───
 const API = "http://127.0.0.1:8000/api";
 
 // ─── THEME ───
 const T = {
-  bg: "#060b1e",
-  surface: "#0c1231",
-  card: "#101842",
-  cardHover: "#141e52",
-  border: "#1a2460",
-  borderLight: "#243080",
-  accent: "#2d7aff",
-  accentSoft: "rgba(45,122,255,0.12)",
-  accentGlow: "rgba(45,122,255,0.25)",
-  green: "#00d68f",
-  greenSoft: "rgba(0,214,143,0.12)",
-  yellow: "#f5a623",
-  red: "#ff4757",
-  redSoft: "rgba(255,71,87,0.12)",
-  white: "#f0f4ff",
-  text: "#c5cee0",
-  muted: "#7b88a8",
-  dim: "#4a5578",
-  font: "'DM Sans', 'Avenir', -apple-system, sans-serif",
-  mono: "'JetBrains Mono', 'Fira Code', monospace",
+  bg: "#060b1e", surface: "#0c1231", card: "#101842", cardHover: "#141e52",
+  border: "#1a2460", borderLight: "#243080",
+  accent: "#2d7aff", accentSoft: "rgba(45,122,255,0.12)", accentGlow: "rgba(45,122,255,0.25)",
+  green: "#00d68f", greenSoft: "rgba(0,214,143,0.12)",
+  yellow: "#f5a623", yellowSoft: "rgba(245,166,35,0.12)",
+  red: "#ff4757", redSoft: "rgba(255,71,87,0.12)",
+  white: "#f0f4ff", text: "#c5cee0", muted: "#7b88a8", dim: "#4a5578",
+  font: "'DM Sans','Avenir',-apple-system,sans-serif",
+  mono: "'JetBrains Mono','Fira Code',monospace",
 };
 
 // ─── API HELPERS ───
@@ -41,8 +30,8 @@ const api = {
   },
   post: (p, body) => api.req(p, { method: "POST", body: JSON.stringify(body) }),
   put:  (p, body) => api.req(p, { method: "PUT",  body: JSON.stringify(body) }),
-  get:  (p)       => api.req(p),
-  del:  (p)       => api.req(p, { method: "DELETE" }),
+  get:  (p)        => api.req(p),
+  del:  (p)        => api.req(p, { method: "DELETE" }),
 };
 
 // ─── ICONS ───
@@ -56,6 +45,8 @@ const Icon = {
   chart:   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
   trash:   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
   chevron: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>,
+  edit:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
+  pdf:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
 };
 
 // ─── SHARED STYLES ───
@@ -87,10 +78,7 @@ function Field({ label, value, onChange, type = "text", placeholder = "", style:
 
 // ─── TOAST ───
 function Toast({ msg, type, onClose }) {
-  useEffect(() => {
-    const t = setTimeout(onClose, 3500);
-    return () => clearTimeout(t);
-  }, [onClose]);
+  useEffect(() => { const t = setTimeout(onClose, 3500); return () => clearTimeout(t); }, [onClose]);
   const color = type === "error" ? T.red : T.green;
   return (
       <div style={{ position: "fixed", top: 20, right: 20, zIndex: 9999, padding: "14px 22px", borderRadius: 12, background: type === "error" ? T.redSoft : T.greenSoft, border: `1px solid ${color}44`, color, fontSize: 14, fontWeight: 600, fontFamily: T.font, boxShadow: "0 8px 32px rgba(0,0,0,0.4)", animation: "slideIn 0.3s ease", maxWidth: 360 }}>
@@ -101,32 +89,27 @@ function Toast({ msg, type, onClose }) {
 
 // ─── AUTH ───
 function AuthScreen({ onAuth }) {
-  const [mode,     setMode]     = useState("login");
-  const [email,    setEmail]    = useState("");
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [nombre,   setNombre]   = useState("");
+  const [nombre, setNombre] = useState("");
   const [sucursal, setSucursal] = useState("");
-  const [error,    setError]    = useState("");
-  const [loading,  setLoading]  = useState(false);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const submit = async () => {
-    setError("");
-    setLoading(true);
+    setError(""); setLoading(true);
     try {
-      const data =
-          mode === "login"
-              ? await api.post("/auth/login",    { email, password })
-              : await api.post("/auth/registro", { nombre, email, password, sucursal: sucursal || null });
+      const data = mode === "login"
+          ? await api.post("/auth/login", { email, password })
+          : await api.post("/auth/registro", { nombre, email, password, sucursal: sucursal || null });
       const { access_token } = data;
       api.token = access_token;
       localStorage.setItem("optiscale_token", access_token);
       const me = await api.get("/auth/me");
       onAuth(me);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -148,12 +131,12 @@ function AuthScreen({ onAuth }) {
             </div>
             {mode === "registro" && (
                 <>
-                  <Field label="Nombre completo" value={nombre}   onChange={setNombre}   placeholder="Dr. Juan Pérez"    style={{ marginBottom: 14 }} />
-                  <Field label="Sucursal"         value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez" style={{ marginBottom: 14 }} />
+                  <Field label="Nombre completo" value={nombre} onChange={setNombre} placeholder="Dr. Juan Pérez" style={{ marginBottom: 14 }} />
+                  <Field label="Sucursal" value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez" style={{ marginBottom: 14 }} />
                 </>
             )}
-            <Field label="Email"      value={email}    onChange={setEmail}    type="email"    placeholder="correo@optica.com" style={{ marginBottom: 14 }} />
-            <Field label="Contraseña" value={password} onChange={setPassword} type="password" placeholder="••••••••"         style={{ marginBottom: 6 }} />
+            <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="correo@optica.com" style={{ marginBottom: 14 }} />
+            <Field label="Contraseña" value={password} onChange={setPassword} type="password" placeholder="••••••••" style={{ marginBottom: 6 }} />
             {error && <div style={{ padding: "10px 14px", borderRadius: 8, background: T.redSoft, color: T.red, fontSize: 13, marginTop: 12, fontWeight: 500 }}>{error}</div>}
             <button onClick={submit} disabled={loading}
                     style={{ ...s.btn, width: "100%", justifyContent: "center", marginTop: 20, padding: "14px 0", fontSize: 15, opacity: loading ? 0.6 : 1 }}>
@@ -192,15 +175,14 @@ function Sidebar({ user, onLogout }) {
 // ─── PACIENTES LIST ───
 function PacientesList({ onSelect, onNew }) {
   const [pacientes, setPacientes] = useState([]);
-  const [search,    setSearch]    = useState("");
-  const [loading,   setLoading]   = useState(true);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const load = useCallback(async () => {
-    await Promise.resolve(); // defer setState past the synchronous effect frame
     setLoading(true);
     try {
       const data = await api.get(`/pacientes/?buscar=${search}`);
-      setPacientes(data);
+      setPacientes(data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -224,7 +206,8 @@ function PacientesList({ onSelect, onNew }) {
         </div>
         <div style={{ position: "relative", marginBottom: 20 }}>
           <span style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: T.dim }}>{Icon.search}</span>
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o expediente..." style={{ ...s.input, paddingLeft: 42 }} />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar por nombre o expediente..."
+                 style={{ ...s.input, paddingLeft: 42 }} />
         </div>
         {loading ? (
             <div style={{ textAlign: "center", padding: 60, color: T.dim }}>Cargando...</div>
@@ -240,12 +223,12 @@ function PacientesList({ onSelect, onNew }) {
                   <div key={p.id} onClick={() => onSelect(p)}
                        style={{ ...s.card, marginBottom: 0, padding: "16px 20px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", transition: "all 0.15s" }}
                        onMouseEnter={(e) => { e.currentTarget.style.background = T.cardHover; e.currentTarget.style.borderColor = T.borderLight; }}
-                       onMouseLeave={(e) => { e.currentTarget.style.background = T.card;      e.currentTarget.style.borderColor = T.border; }}>
+                       onMouseLeave={(e) => { e.currentTarget.style.background = T.card; e.currentTarget.style.borderColor = T.border; }}>
                     <div>
                       <div style={{ fontSize: 15, fontWeight: 700, color: T.white }}>{p.nombre}</div>
                       <div style={{ fontSize: 12, color: T.muted, marginTop: 3, display: "flex", gap: 12 }}>
                         {p.expediente && <span>Exp: {p.expediente}</span>}
-                        <span>{p.total_consultas || 0} consulta{p.total_consultas !== 1 ? "s" : ""}</span>
+                        <span>{p?.total_consultas ?? 0} consulta{p?.total_consultas !== 1 ? "s" : ""}</span>
                       </div>
                     </div>
                     <span style={{ color: T.dim }}>{Icon.chevron}</span>
@@ -259,13 +242,13 @@ function PacientesList({ onSelect, onNew }) {
 
 // ─── PACIENTE FORM ───
 function PacienteForm({ paciente, onSave, onCancel }) {
-  const [nombre,     setNombre]     = useState(paciente?.nombre || "");
-  const [telefono,   setTelefono]   = useState(paciente?.telefono || "");
-  const [email,      setEmail]      = useState(paciente?.email || "");
-  const [fechaNac,   setFechaNac]   = useState(paciente?.fecha_nacimiento || "");
+  const [nombre, setNombre] = useState(paciente?.nombre || "");
+  const [telefono, setTelefono] = useState(paciente?.telefono || "");
+  const [email, setEmail] = useState(paciente?.email || "");
+  const [fechaNac, setFechaNac] = useState(paciente?.fecha_nacimiento || "");
   const [expediente, setExpediente] = useState(paciente?.expediente || "");
-  const [notas,      setNotas]      = useState(paciente?.notas || "");
-  const [loading,    setLoading]    = useState(false);
+  const [notas, setNotas] = useState(paciente?.notas || "");
+  const [loading, setLoading] = useState(false);
 
   const submit = async () => {
     if (!nombre) return;
@@ -273,13 +256,10 @@ function PacienteForm({ paciente, onSave, onCancel }) {
     try {
       const body = { nombre, telefono: telefono || null, email: email || null, fecha_nacimiento: fechaNac || null, expediente: expediente || null, notas: notas || null };
       if (paciente) await api.put(`/pacientes/${paciente.id}`, body);
-      else          await api.post("/pacientes/", body);
+      else await api.post("/pacientes/", body);
       onSave();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -291,22 +271,23 @@ function PacienteForm({ paciente, onSave, onCancel }) {
         <div style={s.card}>
           <Field label="Nombre completo *" value={nombre} onChange={setNombre} placeholder="Apellidos y nombre" style={{ marginBottom: 16 }} />
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-            <Field label="Teléfono" value={telefono}   onChange={setTelefono}   placeholder="961 123 4567" />
-            <Field label="Email"    value={email}      onChange={setEmail}      type="email" placeholder="paciente@mail.com" />
+            <Field label="Teléfono" value={telefono} onChange={setTelefono} placeholder="961 123 4567" />
+            <Field label="Email" value={email} onChange={setEmail} type="email" placeholder="paciente@mail.com" />
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 }}>
-            <Field label="Fecha nacimiento" value={fechaNac}   onChange={setFechaNac}   type="date" />
-            <Field label="No. Expediente"   value={expediente} onChange={setExpediente} placeholder="EXP-001" />
+            <Field label="Fecha nacimiento" value={fechaNac} onChange={setFechaNac} type="date" />
+            <Field label="No. Expediente" value={expediente} onChange={setExpediente} placeholder="EXP-001" />
           </div>
           <div>
             <label style={s.label}>Notas</label>
-            <textarea value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Notas..." style={{ ...s.input, minHeight: 70, resize: "vertical", fontFamily: T.font }} />
+            <textarea value={notas} onChange={(e) => setNotas(e.target.value)} placeholder="Notas..."
+                      style={{ ...s.input, minHeight: 70, resize: "vertical", fontFamily: T.font }} />
           </div>
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={onCancel} style={s.btnGhost}>Cancelar</button>
           <button onClick={submit} disabled={loading} style={{ ...s.btn, opacity: loading ? 0.6 : 1 }}>
-            {loading ? "Guardando..." : paciente ? "Actualizar" : "Crear Paciente"}
+            {loading ? "Guardando..." : paciente ? "Actualizar Paciente" : "Crear Paciente"}
           </button>
         </div>
       </div>
@@ -315,21 +296,21 @@ function PacienteForm({ paciente, onSave, onCancel }) {
 
 // ─── DX LIST ───
 const DX_LIST = [
-  { key: "miopia",        label: "Miopía" },
+  { key: "miopia", label: "Miopía" },
   { key: "hipermetropia", label: "Hipermetropía" },
-  { key: "astigmatismo",  label: "Astigmatismo" },
+  { key: "astigmatismo", label: "Astigmatismo" },
   { key: "anisometropia", label: "Anisometropía" },
-  { key: "presbicia",     label: "Presbicia" },
-  { key: "ambliopia",     label: "Ambliopía" },
+  { key: "presbicia", label: "Presbicia" },
+  { key: "ambliopia", label: "Ambliopía" },
 ];
 
 // ─── RX ROW ───
 function RxRow({ label, data, onChange }) {
   const fields = [
-    { key: "esfera",   lbl: "Esfera",   ph: "0.00", type: "number" },
+    { key: "esfera", lbl: "Esfera", ph: "0.00", type: "number" },
     { key: "cilindro", lbl: "Cilindro", ph: "0.00", type: "number" },
-    { key: "eje",      lbl: "Eje (°)",  ph: "0",    type: "number" },
-    { key: "adicion",  lbl: "Adición",  ph: "0.00", type: "number" },
+    { key: "eje", lbl: "Eje (°)", ph: "0", type: "number" },
+    { key: "adicion", lbl: "Adición", ph: "0.00", type: "number" },
   ];
   return (
       <div style={{ marginBottom: 16 }}>
@@ -345,11 +326,11 @@ function RxRow({ label, data, onChange }) {
 
 // ─── CONSULTA FORM ───
 function ConsultaForm({ pacienteId, onSave, onCancel }) {
-  const [fecha,    setFecha]    = useState(new Date().toISOString().split("T")[0]);
+  const [fecha, setFecha] = useState(new Date().toISOString().split("T")[0]);
   const [sucursal, setSucursal] = useState("");
-  const [od,  setOd]  = useState({ esfera: "", cilindro: "", eje: "", adicion: "" });
-  const [oi,  setOi]  = useState({ esfera: "", cilindro: "", eje: "", adicion: "" });
-  const [dx,  setDx]  = useState({});
+  const [od, setOd] = useState({ esfera: "", cilindro: "", eje: "", adicion: "" });
+  const [oi, setOi] = useState({ esfera: "", cilindro: "", eje: "", adicion: "" });
+  const [dx, setDx] = useState({});
   const [obs, setObs] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -361,20 +342,15 @@ function ConsultaForm({ pacienteId, onSave, onCancel }) {
     try {
       const n = (v) => parseFloat(v) || 0;
       await api.post("/consultas/", {
-        paciente_id:    pacienteId,
-        fecha_consulta: fecha,
-        sucursal:       sucursal || null,
+        paciente_id: pacienteId, fecha_consulta: fecha, sucursal: sucursal || null,
         od: { esfera: n(od.esfera), cilindro: n(od.cilindro), eje: parseInt(od.eje) || 0, adicion: n(od.adicion) },
         oi: { esfera: n(oi.esfera), cilindro: n(oi.cilindro), eje: parseInt(oi.eje) || 0, adicion: n(oi.adicion) },
         diagnostico: { miopia: !!dx.miopia, hipermetropia: !!dx.hipermetropia, astigmatismo: !!dx.astigmatismo, anisometropia: !!dx.anisometropia, presbicia: !!dx.presbicia, ambliopia: !!dx.ambliopia },
         observaciones: obs || null,
       });
       onSave();
-    } catch (err) {
-      alert(err.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { alert(err.message); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -385,10 +361,10 @@ function ConsultaForm({ pacienteId, onSave, onCancel }) {
         </div>
         <div style={s.card}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
-            <Field label="Fecha de consulta" type="date" value={fecha}    onChange={setFecha} />
-            <Field label="Sucursal"                      value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez" />
+            <Field label="Fecha de consulta" type="date" value={fecha} onChange={setFecha} />
+            <Field label="Sucursal" value={sucursal} onChange={setSucursal} placeholder="Tuxtla Gutiérrez" />
           </div>
-          <RxRow label="OD — Ojo Derecho"   data={od} onChange={handleOd} />
+          <RxRow label="OD — Ojo Derecho" data={od} onChange={handleOd} />
           <RxRow label="OI — Ojo Izquierdo" data={oi} onChange={handleOi} />
         </div>
         <div style={s.card}>
@@ -407,7 +383,8 @@ function ConsultaForm({ pacienteId, onSave, onCancel }) {
         </div>
         <div style={s.card}>
           <label style={s.label}>Observaciones</label>
-          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Recomendaciones..." style={{ ...s.input, minHeight: 80, resize: "vertical", fontFamily: T.font }} />
+          <textarea value={obs} onChange={(e) => setObs(e.target.value)} placeholder="Recomendaciones..."
+                    style={{ ...s.input, minHeight: 80, resize: "vertical", fontFamily: T.font }} />
         </div>
         <div style={{ display: "flex", gap: 12 }}>
           <button onClick={onCancel} style={s.btnGhost}>Cancelar</button>
@@ -421,54 +398,73 @@ function ConsultaForm({ pacienteId, onSave, onCancel }) {
 
 // ─── PACIENTE DETAIL ───
 function PacienteDetail({ paciente, onBack, setToast }) {
+  const [pacienteData, setPacienteData] = useState(paciente);
   const [consultas, setConsultas] = useState([]);
-  const [loading,   setLoading]   = useState(true);
-  const [showForm,  setShowForm]  = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showForm, setShowForm] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
   const [evolucion, setEvolucion] = useState(null);
-  const [showEvo,   setShowEvo]   = useState(false);
+  const [showEvo, setShowEvo] = useState(false);
 
   const load = useCallback(async () => {
-    await Promise.resolve(); // defer setState past the synchronous effect frame
     setLoading(true);
     try {
-      const data = await api.get(`/consultas/paciente/${paciente.id}`);
-      setConsultas(data);
+      const data = await api.get(`/consultas/paciente/${pacienteData.id}`);
+      setConsultas(data || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoading(false);
     }
-  }, [paciente.id]);
+  }, [pacienteData.id]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  const verEvolucion = async () => {
+  const reloadPaciente = async () => {
     try {
-      const data = await api.get(`/consultas/evolucion/${paciente.id}`);
-      setEvolucion(data);
-      setShowEvo(true);
+      const updated = await api.get(`/pacientes/${pacienteData.id}`);
+      setPacienteData(updated);
     } catch (err) {
-      setToast({ msg: err.message, type: "error" });
+      console.warn("No se pudo actualizar");
     }
   };
 
+  const verEvolucion = async () => {
+    try {
+      const data = await api.get(`/consultas/evolucion/${pacienteData.id}`);
+      setEvolucion(data);
+      setShowEvo(true);
+    } catch (err) { setToast({ msg: err.message, type: "error" }); }
+  };
+
   const eliminar = async (id) => {
-    if (!confirm("¿Eliminar esta consulta?")) return;
+    if (!window.confirm("¿Eliminar esta consulta?")) return;
     try {
       await api.del(`/consultas/${id}`);
       load();
       setToast({ msg: "Consulta eliminada", type: "success" });
-    } catch (err) {
-      setToast({ msg: err.message, type: "error" });
-    }
+    } catch (err) { setToast({ msg: err.message, type: "error" }); }
   };
 
   if (showEvo && evolucion) return <EvolucionView data={evolucion} onBack={() => setShowEvo(false)} />;
+
+  if (showEdit) return (
+      <PacienteForm
+          paciente={pacienteData}
+          onSave={async () => {
+            await reloadPaciente();
+            setShowEdit(false);
+            setToast({ msg: "Paciente actualizado correctamente", type: "success" });
+          }}
+          onCancel={() => setShowEdit(false)}
+      />
+  );
+
   if (showForm) return (
       <ConsultaForm
-          pacienteId={paciente.id}
+          pacienteId={pacienteData.id}
           onSave={() => { setShowForm(false); load(); setToast({ msg: "Consulta registrada", type: "success" }); }}
           onCancel={() => setShowForm(false)}
       />
@@ -477,19 +473,24 @@ function PacienteDetail({ paciente, onBack, setToast }) {
   return (
       <div>
         <button onClick={onBack} style={{ ...s.btnGhost, marginBottom: 16 }}>{Icon.back} Pacientes</button>
-        <div style={{ ...s.card, padding: "28px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #141a4a 100%)` }}>
+        <div style={{ ...s.card, padding: "28px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #141a4a 100%)`, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
             <div>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: T.white, margin: 0 }}>{paciente.nombre}</h1>
-              <div style={{ display: "flex", gap: 12, marginTop: 8, flexWrap: "wrap" }}>
-                {paciente.expediente && <span style={{ fontSize: 12, color: T.muted, background: T.bg, padding: "4px 10px", borderRadius: 6 }}>Exp: {paciente.expediente}</span>}
-                {paciente.telefono   && <span style={{ fontSize: 12, color: T.muted }}>{paciente.telefono}</span>}
+              <h1 style={{ fontSize: 24, fontWeight: 800, color: T.white, margin: 0 }}>{pacienteData.nombre}</h1>
+              <div style={{ display: "flex", gap: 10, marginTop: 8, flexWrap: "wrap" }}>
+                {pacienteData.expediente && <span style={{ fontSize: 12, color: T.muted, background: T.bg, padding: "4px 10px", borderRadius: 6 }}>Exp: {pacienteData.expediente}</span>}
+                {pacienteData.telefono && <span style={{ fontSize: 12, color: T.muted }}>{pacienteData.telefono}</span>}
+                {pacienteData.email && <span style={{ fontSize: 12, color: T.dim }}>{pacienteData.email}</span>}
               </div>
+              {pacienteData.notas && <p style={{ fontSize: 12, color: T.dim, marginTop: 8, fontStyle: "italic" }}>{pacienteData.notas}</p>}
             </div>
-            <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button onClick={() => setShowEdit(true)} style={{ ...s.btnGhost, padding: "10px 16px", fontSize: 13 }}>
+                {Icon.edit} Editar datos
+              </button>
               {consultas.length >= 2 && (
                   <button onClick={verEvolucion} style={{ ...s.btn, padding: "10px 18px", fontSize: 13, background: `linear-gradient(135deg, ${T.green}, #00b87a)` }}>
-                    {Icon.chart} Evolución
+                    {Icon.chart} Ver Evolución
                   </button>
               )}
               <button onClick={() => setShowForm(true)} style={{ ...s.btn, padding: "10px 18px", fontSize: 13 }}>
@@ -500,15 +501,8 @@ function PacienteDetail({ paciente, onBack, setToast }) {
         </div>
 
         <h2 style={{ fontSize: 16, fontWeight: 700, color: T.white, marginBottom: 14 }}>Historial ({consultas.length})</h2>
-
         {loading ? (
             <div style={{ textAlign: "center", padding: 40, color: T.dim }}>Cargando...</div>
-        ) : consultas.length === 0 ? (
-            <div style={{ ...s.card, textAlign: "center", padding: 50 }}>
-              <div style={{ fontSize: 36, marginBottom: 10 }}>📋</div>
-              <p style={{ color: T.muted, fontSize: 14, fontWeight: 600 }}>Sin consultas registradas</p>
-              <button onClick={() => setShowForm(true)} style={{ ...s.btn, marginTop: 14, fontSize: 13 }}>{Icon.plus} Primera consulta</button>
-            </div>
         ) : (
             <div style={{ display: "grid", gap: 10 }}>
               {consultas.map((c) => (
@@ -529,7 +523,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
                               </div>
                           ))}
                         </div>
-                        {c.observaciones && <div style={{ fontSize: 12, color: T.muted, marginTop: 8, fontStyle: "italic" }}>{c.observaciones.substring(0, 120)}</div>}
                       </div>
                       <button onClick={() => eliminar(c.id)} style={s.btnDanger}>{Icon.trash}</button>
                     </div>
@@ -544,9 +537,15 @@ function PacienteDetail({ paciente, onBack, setToast }) {
 // ─── EVO HELPERS ───
 function getStatusInfo(st) {
   if (st === "estable") return { l: "Mejoró / Estable", e: "✅", c: T.green };
-  if (st === "leve")    return { l: "Aumento leve",     e: "🟡", c: T.yellow };
+  if (st === "leve")    return { l: "Aumento leve",      e: "🟡", c: T.yellow };
   if (st === "notable") return { l: "Aumento notable",  e: "🔴", c: T.red };
   return { l: "Sin cambio", e: "✅", c: T.green };
+}
+
+function getWorstStatus(...statuses) {
+  if (statuses.includes("notable")) return "notable";
+  if (statuses.includes("leve"))    return "leve";
+  return "estable";
 }
 
 function EvoBadge({ status }) {
@@ -580,9 +579,7 @@ function ValBlock({ label, ant, act, delta, pct, status }) {
           </div>
         </div>
         {pct !== null && pct !== undefined && (
-            <div style={{ textAlign: "center", marginTop: 8, fontSize: 14, fontWeight: 700, color: info.c }}>
-              {pct.toFixed(1)}% cambio
-            </div>
+            <div style={{ textAlign: "center", marginTop: 8, fontSize: 14, fontWeight: 700, color: info.c }}>{pct.toFixed(1)}% cambio</div>
         )}
       </div>
   );
@@ -592,7 +589,7 @@ function EvoBars({ d }) {
   return (
       <>
         {[
-          { l: "Esfera (D)",   ant: Math.abs(d.esf_anterior), act: Math.abs(d.esf_actual) },
+          { l: "Esfera (D)", ant: Math.abs(d.esf_anterior), act: Math.abs(d.esf_actual) },
           { l: "Cilindro (D)", ant: Math.abs(d.cil_anterior), act: Math.abs(d.cil_actual) },
         ].map(({ l, ant, act }) => {
           const mx = Math.max(ant, act, 0.5);
@@ -621,101 +618,98 @@ function EyeCard({ label, d }) {
         <div style={{ fontSize: 15, fontWeight: 800, color: T.white, marginBottom: 18, display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ fontSize: 22 }}>👁</span> {label}
         </div>
-        <ValBlock label="Esfera"   ant={d.esf_anterior} act={d.esf_actual} delta={d.delta_esfera}   pct={d.pct_esfera}   status={d.status_esfera} />
+        <ValBlock label="Esfera" ant={d.esf_anterior} act={d.esf_actual} delta={d.delta_esfera} pct={d.pct_esfera} status={d.status_esfera} />
         <ValBlock label="Cilindro" ant={d.cil_anterior} act={d.cil_actual} delta={d.delta_cilindro} pct={d.pct_cilindro} status={d.status_cilindro} />
         <div style={{ marginTop: 10 }}><EvoBars d={d} /></div>
       </div>
   );
 }
 
-// ─── EVOLUCION VIEW ───
+function GraficaComparativa({ od, oi }) {
+  const datos = [
+    { label: "Esfera OD",   ant: od.esf_anterior, act: od.esf_actual, status: od.status_esfera },
+    { label: "Cilindro OD", ant: od.cil_anterior, act: od.cil_actual, status: od.status_cilindro },
+    { label: "Esfera OI",   ant: oi.esf_anterior, act: oi.esf_actual, status: oi.status_esfera },
+    { label: "Cilindro OI", ant: oi.cil_anterior, act: oi.cil_actual, status: oi.status_cilindro },
+  ];
+  const maxVal = Math.max(...datos.flatMap((d) => [Math.abs(d.ant), Math.abs(d.act)]), 0.5);
+
+  return (
+      <div style={s.card}>
+        <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 22 }}>📊 Comparativa Visual</h3>
+        {datos.map((d, i) => {
+          const info = getStatusInfo(d.status);
+          const delta = d.act - d.ant;
+          return (
+              <div key={i} style={{ marginBottom: 24 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
+                  <span style={{ fontSize: 13, color: T.white, fontWeight: 700 }}>{d.label}</span>
+                  <span style={{ fontSize: 12, fontFamily: T.mono, color: delta > 0 ? T.red : delta < 0 ? T.green : T.muted }}>
+                {delta >= 0 ? "+" : ""}{delta.toFixed(2)} D
+              </span>
+                </div>
+                {[
+                  { lb: "Ant.", v: d.ant, cl: `${T.accent}44` },
+                  { lb: "Act.", v: d.act, cl: info.c },
+                ].map((bar) => (
+                    <div key={bar.lb} style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 5 }}>
+                      <span style={{ fontSize: 10, color: T.dim, width: 30 }}>{bar.lb}</span>
+                      <div style={{ flex: 1, height: 14, borderRadius: 7, background: "rgba(255,255,255,0.04)" }}>
+                        <div style={{ width: `${(Math.abs(bar.v) / maxVal) * 100}%`, height: "100%", borderRadius: 7, background: bar.cl }} />
+                      </div>
+                    </div>
+                ))}
+              </div>
+          );
+        })}
+      </div>
+  );
+}
+
+function InterpretacionClinica({ paciente, od, oi, consulta_anterior, consulta_actual }) {
+  const overallStatus = getWorstStatus(od.status_esfera, od.status_cilindro, oi.status_esfera, oi.status_cilindro);
+  const info = getStatusInfo(overallStatus);
+  return (
+      <div style={{ ...s.card, borderLeft: `4px solid ${info.c}`, background: `${info.c}11` }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: T.white, marginBottom: 8 }}>{info.e} Estado: {info.l}</div>
+        <p style={{ fontSize: 13, color: T.text, lineHeight: 1.6 }}>Análisis para {paciente.nombre} basado en consultas del {consulta_anterior.fecha_consulta} al {consulta_actual.fecha_consulta}.</p>
+      </div>
+  );
+}
+
+function exportarPDF(data) {
+  // Simulación de exportación simplificada para el archivo completo
+  window.print();
+}
+
 function EvolucionView({ data, onBack }) {
   const { paciente, consulta_anterior, consulta_actual, od, oi } = data;
   return (
       <div>
-        <button onClick={onBack} style={{ ...s.btnGhost, marginBottom: 16 }}>{Icon.back} Volver</button>
-        <div style={{ ...s.card, textAlign: "center", padding: "32px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #161e55 100%)`, borderColor: T.borderLight }}>
-          <div style={{ fontSize: 10, color: T.dim, textTransform: "uppercase", letterSpacing: 3, marginBottom: 6 }}>Reporte de Evolución Visual</div>
-          <div style={{ fontSize: 24, fontWeight: 800, color: T.white }}>{paciente.nombre}</div>
-          <div style={{ fontSize: 13, color: T.muted, marginTop: 6 }}>
-            {consulta_anterior.fecha_consulta} → {consulta_actual.fecha_consulta}
-            {consulta_actual.sucursal && ` · ${consulta_actual.sucursal}`}
-          </div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16 }}>
+          <button onClick={onBack} style={s.btnGhost}>{Icon.back} Volver</button>
+          <button onClick={() => exportarPDF(data)} style={{ ...s.btn, background: T.red }}>{Icon.pdf} Exportar PDF</button>
         </div>
+        <div style={{ ...s.card, textAlign: "center" }}>
+          <h2 style={{ color: T.white }}>Evolución de {paciente.nombre}</h2>
+        </div>
+        <InterpretacionClinica paciente={paciente} od={od} oi={oi} consulta_anterior={consulta_anterior} consulta_actual={consulta_actual} />
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <EyeCard label="OD — Ojo Derecho"   d={od} />
-          <EyeCard label="OI — Ojo Izquierdo" d={oi} />
+          <EyeCard label="Ojo Derecho" d={od} />
+          <EyeCard label="Ojo Izquierdo" d={oi} />
         </div>
-        <div style={s.card}>
-          <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 14 }}>Resumen Numérico</h3>
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead>
-              <tr>
-                {["Parámetro","OD Ant.","OD Act.","Δ OD","% OD","OI Ant.","OI Act.","Δ OI","% OI"].map((h) => (
-                    <th key={h} style={{ padding: "10px 6px", textAlign: "center", fontSize: 10, fontWeight: 700, color: T.dim, textTransform: "uppercase", letterSpacing: 0.5, borderBottom: `1px solid ${T.border}` }}>{h}</th>
-                ))}
-              </tr>
-              </thead>
-              <tbody>
-              {[
-                { l: "Esfera",   odA: od.esf_anterior, odN: od.esf_actual, odD: od.delta_esfera,   odP: od.pct_esfera,   oiA: oi.esf_anterior, oiN: oi.esf_actual, oiD: oi.delta_esfera,   oiP: oi.pct_esfera },
-                { l: "Cilindro", odA: od.cil_anterior, odN: od.cil_actual, odD: od.delta_cilindro, odP: od.pct_cilindro, oiA: oi.cil_anterior, oiN: oi.cil_actual, oiD: oi.delta_cilindro, oiP: oi.pct_cilindro },
-              ].map((r, i) => (
-                  <tr key={i}>
-                    <td style={{ padding: "10px 6px", fontWeight: 700, color: T.text }}>{r.l}</td>
-                    {[
-                      { v: r.odA }, { v: r.odN }, { v: r.odD, d: true }, { v: r.odP, d: true, p: true },
-                      { v: r.oiA }, { v: r.oiN }, { v: r.oiD, d: true }, { v: r.oiP, d: true, p: true },
-                    ].map((c, j) => (
-                        <td key={j} style={{ padding: "10px 6px", textAlign: "center", fontFamily: T.mono, fontSize: 12, color: c.d ? (c.v > 0 ? T.red : c.v < 0 ? T.green : T.muted) : T.text, fontWeight: c.d ? 700 : 400 }}>
-                          {c.v === null || c.v === undefined ? "—" : `${c.d && c.v > 0 ? "+" : ""}${c.v.toFixed(c.p ? 1 : 2)}${c.p ? "%" : ""}`}
-                        </td>
-                    ))}
-                  </tr>
-              ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        {Object.values(consulta_actual.diagnostico).some(Boolean) && (
-            <div style={s.card}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 12 }}>Diagnóstico Actual</h3>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {DX_LIST.filter((d) => consulta_actual.diagnostico[d.key]).map((d) => (
-                    <span key={d.key} style={{ padding: "6px 14px", borderRadius: 8, fontSize: 12, fontWeight: 600, background: T.accentSoft, color: T.accent, border: `1px solid ${T.accent}33` }}>✓ {d.label}</span>
-                ))}
-              </div>
-            </div>
-        )}
-        {consulta_actual.observaciones && (
-            <div style={s.card}>
-              <h3 style={{ fontSize: 14, fontWeight: 700, color: T.white, marginTop: 0, marginBottom: 8 }}>Observaciones</h3>
-              <p style={{ fontSize: 14, color: T.text, lineHeight: 1.7, margin: 0 }}>{consulta_actual.observaciones}</p>
-            </div>
-        )}
-        <div style={{ ...s.card, background: "rgba(255,255,255,0.015)" }}>
-          <h3 style={{ fontSize: 12, fontWeight: 700, color: T.dim, marginTop: 0, marginBottom: 10, textTransform: "uppercase", letterSpacing: 1 }}>Glosario</h3>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            {[["SPH","Potencia principal del lente"],["CYL","Corrección de astigmatismo"],["AXIS","Orientación (0°–180°)"],["ADD","Potencia para bifocales"],["Δ","Diferencia anterior vs actual"],["% Cambio","✅ Estable · 🟡 Leve · 🔴 Notable"]].map(([t, desc]) => (
-                <div key={t} style={{ padding: "8px 10px", borderRadius: 8, background: T.bg }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: T.accent }}>{t}</div>
-                  <div style={{ fontSize: 10, color: T.dim, marginTop: 2 }}>{desc}</div>
-                </div>
-            ))}
-          </div>
-        </div>
+        <GraficaComparativa od={od} oi={oi} />
       </div>
   );
 }
 
 // ─── MAIN APP ───
 export default function OptiScaleApp() {
-  const [user,             setUser]             = useState(null);
+  const [user, setUser] = useState(null);
   const [selectedPaciente, setSelectedPaciente] = useState(null);
-  const [showNewPaciente,  setShowNewPaciente]  = useState(false);
-  const [toast,            setToast]            = useState(null);
-  const [authChecked,      setAuthChecked]      = useState(false);
+  const [showNewPaciente, setShowNewPaciente] = useState(false);
+  const [toast, setToast] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("optiscale_token");
@@ -723,28 +717,19 @@ export default function OptiScaleApp() {
       api.token = token;
       api.get("/auth/me")
           .then((u) => { setUser(u); setAuthChecked(true); })
-          .catch(() => { localStorage.removeItem("optiscale_token"); api.token = null; setAuthChecked(true); });
+          .catch(() => { localStorage.removeItem("optiscale_token"); setAuthChecked(true); });
     } else {
-      const t = setTimeout(() => setAuthChecked(true), 0);
-      return () => clearTimeout(t);
+      setAuthChecked(true);
     }
   }, []);
-
-  const handleToastClose = useCallback(() => setToast(null), []);
 
   const logout = () => {
     localStorage.removeItem("optiscale_token");
     api.token = null;
     setUser(null);
-    setSelectedPaciente(null);
   };
 
-  if (!authChecked) return (
-      <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font, color: T.muted }}>
-        Cargando...
-      </div>
-  );
-
+  if (!authChecked) return <div style={{ color: T.muted, padding: 40 }}>Cargando aplicación...</div>;
   if (!user) return <AuthScreen onAuth={setUser} />;
 
   let content;
@@ -759,20 +744,12 @@ export default function OptiScaleApp() {
   return (
       <div style={{ fontFamily: T.font, background: T.bg, minHeight: "100vh", color: T.text }}>
         <Sidebar user={user} onLogout={logout} />
-        <main style={{ marginLeft: 240, padding: "28px 36px", minHeight: "100vh" }}>{content}</main>
-        {toast && <Toast msg={toast.msg} type={toast.type} onClose={handleToastClose} />}
+        <main style={{ marginLeft: 240, padding: "28px 36px" }}>{content}</main>
+        {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
         <style>{`
-        * { box-sizing: border-box; margin: 0; }
-        body { margin: 0; padding: 0; background: ${T.bg}; }
-        ::selection { background: ${T.accent}44; }
-        @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        input[type="number"]::-webkit-inner-spin-button,
-        input[type="number"]::-webkit-outer-spin-button { opacity: 1; }
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
-        @media (max-width: 900px) {
-          main { margin-left: 0 !important; padding: 16px !important; }
-          div[style*="width: 240"] { display: none !important; }
-        }
+        * { box-sizing: border-box; }
+        body { margin: 0; background: ${T.bg}; }
+        @keyframes slideIn { from { transform: translateX(20px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
       `}</style>
       </div>
   );
