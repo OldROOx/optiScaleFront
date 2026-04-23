@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 
 // ─── CONFIG ───
 const API = "http://127.0.0.1:8000/api";
@@ -47,6 +47,8 @@ const Icon = {
   chevron: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="9 18 15 12 9 6"/></svg>,
   edit:    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>,
   pdf:     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>,
+  box:     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>,
+  wallet:  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M12 11h4v2h-4z"/></svg>,
 };
 
 // ─── SHARED STYLES ───
@@ -149,7 +151,13 @@ function AuthScreen({ onAuth }) {
 }
 
 // ─── SIDEBAR ───
-function Sidebar({ user, onLogout }) {
+function Sidebar({ user, activeTab, onTabChange, onLogout }) {
+  const tabs = [
+    { id: "pacientes", label: "Pacientes", icon: Icon.users },
+    { id: "inventario", label: "Inventario", icon: Icon.box },
+    { id: "caja", label: "Caja", icon: Icon.wallet },
+  ];
+
   return (
       <div style={{ width: 240, background: T.surface, borderRight: `1px solid ${T.border}`, display: "flex", flexDirection: "column", height: "100vh", position: "fixed", left: 0, top: 0 }}>
         <div style={{ padding: "24px 20px 20px", borderBottom: `1px solid ${T.border}` }}>
@@ -157,9 +165,15 @@ function Sidebar({ user, onLogout }) {
           <p style={{ fontSize: 10, color: T.dim, marginTop: 4, letterSpacing: 1.5, textTransform: "uppercase" }}>Panel de Control</p>
         </div>
         <nav style={{ flex: 1, padding: "16px 10px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, background: T.accentSoft, color: T.accent, fontSize: 14, fontWeight: 700 }}>
-            {Icon.users} Pacientes
-          </div>
+          {tabs.map(tab => (
+              <div key={tab.id} onClick={() => onTabChange(tab.id)}
+                   style={{ display: "flex", alignItems: "center", gap: 10, padding: "11px 14px", borderRadius: 10, cursor: "pointer", transition: "0.2s", marginBottom: 4,
+                     background: activeTab === tab.id ? T.accentSoft : "transparent",
+                     color: activeTab === tab.id ? T.accent : T.muted,
+                     fontWeight: activeTab === tab.id ? 700 : 500 }}>
+                {tab.icon} {tab.label}
+              </div>
+          ))}
         </nav>
         <div style={{ padding: "16px 14px", borderTop: `1px solid ${T.border}` }}>
           <div style={{ fontSize: 13, fontWeight: 600, color: T.white, marginBottom: 2 }}>{user.nombre}</div>
@@ -183,7 +197,7 @@ function PacientesList({ onSelect, onNew }) {
     setLoading(true);
     try {
       const data = await api.get(`/pacientes/?buscar=${search}`);
-      setPacientes(data);
+      setPacientes(data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, [search]);
@@ -406,7 +420,7 @@ function PacienteDetail({ paciente, onBack, setToast }) {
     setLoading(true);
     try {
       const data = await api.get(`/consultas/paciente/${pacienteData.id}`);
-      setConsultas(data);
+      setConsultas(data || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   }, [pacienteData.id]);
@@ -437,7 +451,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
     } catch (err) { setToast({ msg: err.message, type: "error" }); }
   };
 
-  // ── Sub-vistas ──
   if (showEvo && evolucion) return <EvolucionView data={evolucion} onBack={() => setShowEvo(false)} />;
 
   if (showEdit) return (
@@ -464,7 +477,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
       <div>
         <button onClick={onBack} style={{ ...s.btnGhost, marginBottom: 16 }}>{Icon.back} Pacientes</button>
 
-        {/* Header del paciente */}
         <div style={{ ...s.card, padding: "28px 24px", background: `linear-gradient(135deg, ${T.card} 0%, #141a4a 100%)`, marginBottom: 16 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 16 }}>
             <div>
@@ -477,7 +489,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
               {pacienteData.notas && <p style={{ fontSize: 12, color: T.dim, marginTop: 8, fontStyle: "italic" }}>{pacienteData.notas}</p>}
             </div>
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {/* BOTÓN EDITAR DATOS */}
               <button onClick={() => setShowEdit(true)} style={{ ...s.btnGhost, padding: "10px 16px", fontSize: 13 }}>
                 {Icon.edit} Editar datos
               </button>
@@ -493,7 +504,6 @@ function PacienteDetail({ paciente, onBack, setToast }) {
           </div>
         </div>
 
-        {/* Aviso 1 consulta */}
         {consultas.length === 1 && (
             <div style={{ ...s.card, marginBottom: 16, padding: "14px 20px", background: T.yellowSoft, borderColor: `${T.yellow}44`, display: "flex", alignItems: "center", gap: 10 }}>
               <span style={{ fontSize: 18 }}>🟡</span>
@@ -636,7 +646,6 @@ function EyeCard({ label, d }) {
   );
 }
 
-// ─── NUEVA: GRÁFICA COMPARATIVA ───
 function GraficaComparativa({ od, oi }) {
   const datos = [
     { label: "Esfera OD",   ant: od.esf_anterior, act: od.esf_actual, status: od.status_esfera },
@@ -696,7 +705,6 @@ function GraficaComparativa({ od, oi }) {
   );
 }
 
-// ─── NUEVA: GENERADOR DE TEXTO CLÍNICO ───
 function generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual) {
   const overallStatus = getWorstStatus(od.status_esfera, od.status_cilindro, oi.status_esfera, oi.status_cilindro);
   const nombre = paciente.nombre;
@@ -729,7 +737,6 @@ function generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_act
   }
 }
 
-// ─── NUEVA: TARJETA DE INTERPRETACIÓN ───
 function InterpretacionClinica({ paciente, od, oi, consulta_anterior, consulta_actual }) {
   const interp = generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual);
   return (
@@ -746,7 +753,6 @@ function InterpretacionClinica({ paciente, od, oi, consulta_anterior, consulta_a
   );
 }
 
-// ─── NUEVA: EXPORTAR PDF ───
 function exportarPDF(data) {
   const { paciente, consulta_anterior, consulta_actual, od, oi } = data;
   const interp  = generarInterpretacion(paciente, od, oi, consulta_anterior, consulta_actual);
@@ -883,7 +889,7 @@ ${consulta_actual.observaciones ? `<h2>Observaciones Clínicas</h2><div class="o
   <div class="gi"><div class="gk">AXIS (Eje)</div><div class="gv">Orientación del astigmatismo (0°–180°)</div></div>
   <div class="gi"><div class="gk">ADD (Adición)</div><div class="gv">Potencia extra para bifocales / progresivos</div></div>
   <div class="gi"><div class="gk">Δ (Delta)</div><div class="gv">Diferencia entre consulta anterior y actual</div></div>
-  <div class="gi"><div class="gk">Semáforo</div><div class="gv">✅ Estable · 🟡 Leve (&lt;1D) · 🔴 Notable (≥1D)</div></div>
+  <div class="gi"><div class="gk">Semáforo</div><div class="gv">✅ Estable · 🟡 Leve (<1D) · 🔴 Notable (≥1D)</div></div>
 </div>
 <div class="footer">
   <span>OptiScale — Sistema de Gestión Visual Clínica</span>
@@ -1023,9 +1029,189 @@ function EvolucionView({ data, onBack }) {
   );
 }
 
-// ─── MAIN APP ───
+// ─── MODULO: INVENTARIO (CONECTADO AL API) ───
+function InventarioModule() {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [newNombre, setNewNombre] = useState("");
+  const [newCat, setNewCat] = useState("");
+  const [newStock, setNewStock] = useState("");
+  const [newPrecio, setNewPrecio] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get("/gestion/inventario");
+      setItems(data || []);
+    } catch (err) { console.error("Error cargando inventario", err); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const agregarProducto = async () => {
+    if(!newNombre || !newPrecio) return;
+    try {
+      await api.post("/gestion/inventario", {
+        nombre: newNombre,
+        categoria: newCat || "General",
+        stock: parseInt(newStock) || 0,
+        precio: parseFloat(newPrecio) || 0
+      });
+      load(); // Recarga los datos desde el backend
+      setNewNombre(""); setNewCat(""); setNewStock(""); setNewPrecio("");
+      setShowForm(false);
+    } catch(err) { alert("Error guardando el producto"); }
+  };
+
+  return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, alignItems: "center" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: T.white, margin: 0 }}>Inventario</h1>
+          <button style={s.btn} onClick={() => setShowForm(!showForm)}>
+            {Icon.plus} {showForm ? "Cancelar" : "Agregar Producto"}
+          </button>
+        </div>
+
+        {showForm && (
+            <div style={{...s.card, display: "flex", gap: 10, alignItems: "flex-end"}}>
+              <Field label="Producto" value={newNombre} onChange={setNewNombre} style={{flex: 2}} placeholder="Ej: Mica Blue Light" />
+              <Field label="Categoría" value={newCat} onChange={setNewCat} style={{flex: 1}} placeholder="Ej: Cristales" />
+              <Field label="Stock" type="number" value={newStock} onChange={setNewStock} style={{flex: 1}} placeholder="0" />
+              <Field label="Precio" type="number" value={newPrecio} onChange={setNewPrecio} style={{flex: 1}} placeholder="0.00" />
+              <button style={{...s.btn, height: "42px", padding: "0 20px"}} onClick={agregarProducto}>Guardar</button>
+            </div>
+        )}
+
+        <div style={s.card}>
+          {loading ? (
+              <div style={{ textAlign: "center", padding: 40, color: T.dim }}>Cargando inventario...</div>
+          ) : (
+              <table style={{ width: "100%", borderCollapse: "collapse" }}>
+                <thead>
+                <tr style={{ textAlign: "left", color: T.dim, fontSize: 11, textTransform: "uppercase", borderBottom: `1px solid ${T.border}` }}>
+                  <th style={{ padding: 12 }}>Producto</th>
+                  <th>Categoría</th>
+                  <th>Stock</th>
+                  <th>Precio</th>
+                  <th>Estado</th>
+                </tr>
+                </thead>
+                <tbody>
+                {items.map(i => (
+                    <tr key={i.id} style={{ borderBottom: `1px solid ${T.border}`, fontSize: 14 }}>
+                      <td style={{ padding: "16px 12px", color: T.white, fontWeight: 600 }}>{i.nombre}</td>
+                      <td style={{ color: T.muted }}>{i.categoria}</td>
+                      <td style={{ color: T.white, fontFamily: T.mono }}>{i.stock}</td>
+                      <td style={{ color: T.white, fontFamily: T.mono }}>${i.precio}</td>
+                      <td>
+                  <span style={{ padding: "4px 10px", borderRadius: 6, fontSize: 11, fontWeight: 700, background: i.stock < 10 ? T.yellowSoft : T.greenSoft, color: i.stock < 10 ? T.yellow : T.green }}>
+                    {i.stock < 10 ? "STOCK BAJO" : "OK"}
+                  </span>
+                      </td>
+                    </tr>
+                ))}
+                {items.length === 0 && (
+                    <tr><td colSpan="5" style={{textAlign:"center", padding: 30, color: T.dim}}>No hay productos registrados</td></tr>
+                )}
+                </tbody>
+              </table>
+          )}
+        </div>
+      </div>
+  );
+}
+
+// ─── MODULO: CAJA (CONECTADO AL API) ───
+function CajaModule() {
+  const [movs, setMovs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [concepto, setConcepto] = useState("");
+  const [monto, setMonto] = useState("");
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api.get("/gestion/caja");
+      setMovs(data || []);
+    } catch (err) { console.error("Error cargando caja", err); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const registrarMovimiento = async (tipo) => {
+    if (!concepto || !monto) return;
+    try {
+      await api.post("/gestion/caja", {
+        concepto: concepto,
+        monto: parseFloat(monto),
+        tipo: tipo
+      });
+      load(); // Recarga los datos desde el backend
+      setConcepto("");
+      setMonto("");
+    } catch(err) { alert("Error guardando el movimiento"); }
+  };
+
+  const balance = movs.reduce((acc, m) => m.tipo === "ingreso" ? acc + m.monto : acc - m.monto, 0);
+
+  return (
+      <div>
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 24, alignItems: "center" }}>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: T.white, margin: 0 }}>Caja</h1>
+          <div style={{ textAlign: "right" }}>
+            <div style={s.label}>Balance Actual</div>
+            <div style={{ fontSize: 28, fontWeight: 800, color: balance >= 0 ? T.green : T.red }}>
+              ${balance.toLocaleString()}
+            </div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 20 }}>
+
+          <div style={s.card}>
+            <h3 style={{ fontSize: 14, color: T.muted, marginBottom: 20, marginTop: 0 }}>Movimientos Recientes</h3>
+            {loading ? (
+                <div style={{ textAlign: "center", padding: 20, color: T.dim }}>Cargando...</div>
+            ) : movs.length === 0 ? (
+                <div style={{ textAlign: "center", padding: 40, color: T.dim }}>Sin movimientos registrados</div>
+            ) : (
+                movs.slice().reverse().map(m => ( // Invertir para ver los más nuevos arriba
+                    <div key={m.id} style={{ display: "flex", justifyContent: "space-between", padding: "12px 0", borderBottom: `1px solid ${T.border}` }}>
+                      <div>
+                        <div style={{ fontSize: 14, fontWeight: 600, color: T.white }}>{m.concepto}</div>
+                        <div style={{ fontSize: 11, color: T.dim, marginTop: 4 }}>
+                          {new Date(m.fecha).toLocaleDateString("es-MX", { year:"numeric", month:"long", day:"numeric"})}
+                        </div>
+                      </div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: m.tipo === "ingreso" ? T.green : T.red }}>
+                        {m.tipo === "ingreso" ? "+" : "-"}${m.monto}
+                      </div>
+                    </div>
+                ))
+            )}
+          </div>
+
+          <div style={{ ...s.card, height: "fit-content" }}>
+            <h3 style={{ fontSize: 14, color: T.muted, marginBottom: 20, marginTop: 0 }}>Nuevo Registro</h3>
+            <Field label="Concepto" value={concepto} onChange={setConcepto} placeholder="Ej: Venta de armazón" style={{ marginBottom: 16 }} />
+            <Field label="Monto" type="number" value={monto} onChange={setMonto} placeholder="0.00" style={{ marginBottom: 16 }} />
+            <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+              <button onClick={() => registrarMovimiento("ingreso")} style={{ ...s.btn, flex: 1, justifyContent: "center", background: T.green, boxShadow: "none" }}>+ Ingreso</button>
+              <button onClick={() => registrarMovimiento("egreso")} style={{ ...s.btn, flex: 1, justifyContent: "center", background: T.red, boxShadow: "none" }}>- Egreso</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+  );
+}
+
+// ─── APLICACIÓN PRINCIPAL ───
 export default function OptiScaleApp() {
   const [user, setUser] = useState(null);
+  const [activeTab, setActiveTab] = useState("pacientes");
   const [selectedPaciente, setSelectedPaciente] = useState(null);
   const [showNewPaciente, setShowNewPaciente] = useState(false);
   const [toast, setToast] = useState(null);
@@ -1062,30 +1248,49 @@ export default function OptiScaleApp() {
   if (!user) return <AuthScreen onAuth={setUser} />;
 
   let content;
-  if (showNewPaciente) {
-    content = (
-        <PacienteForm
-            onSave={() => { setShowNewPaciente(false); setToast({ msg: "Paciente creado exitosamente", type: "success" }); }}
-            onCancel={() => setShowNewPaciente(false)}
-        />
-    );
-  } else if (selectedPaciente) {
-    content = (
-        <PacienteDetail
-            paciente={selectedPaciente}
-            onBack={() => setSelectedPaciente(null)}
-            setToast={setToast}
-        />
-    );
-  } else {
-    content = <PacientesList onSelect={setSelectedPaciente} onNew={() => setShowNewPaciente(true)} />;
+  if (activeTab === "pacientes") {
+    if (showNewPaciente) {
+      content = (
+          <PacienteForm
+              onSave={() => { setShowNewPaciente(false); setToast({ msg: "Paciente creado exitosamente", type: "success" }); }}
+              onCancel={() => setShowNewPaciente(false)}
+          />
+      );
+    } else if (selectedPaciente) {
+      content = (
+          <PacienteDetail
+              paciente={selectedPaciente}
+              onBack={() => setSelectedPaciente(null)}
+              setToast={setToast}
+          />
+      );
+    } else {
+      content = <PacientesList onSelect={setSelectedPaciente} onNew={() => setShowNewPaciente(true)} />;
+    }
+  } else if (activeTab === "inventario") {
+    content = <InventarioModule />;
+  } else if (activeTab === "caja") {
+    content = <CajaModule />;
   }
 
   return (
       <div style={{ fontFamily: T.font, background: T.bg, minHeight: "100vh", color: T.text }}>
-        <Sidebar user={user} onLogout={logout} />
-        <main style={{ marginLeft: 240, padding: "28px 36px", minHeight: "100vh" }}>{content}</main>
+        <Sidebar
+            user={user}
+            activeTab={activeTab}
+            onTabChange={(id) => {
+              setActiveTab(id);
+              setSelectedPaciente(null);
+              setShowNewPaciente(false);
+            }}
+            onLogout={logout}
+        />
+        <main style={{ marginLeft: 240, padding: "28px 36px", minHeight: "100vh" }}>
+          {content}
+        </main>
         {toast && <Toast msg={toast.msg} type={toast.type} onClose={handleToastClose} />}
+
+        {/* Estilos Globales para Inputs */}
         <style>{`
         * { box-sizing: border-box; margin: 0; }
         body { margin: 0; padding: 0; background: ${T.bg}; }
@@ -1093,6 +1298,7 @@ export default function OptiScaleApp() {
         @keyframes slideIn { from { transform: translateX(30px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         input[type="number"]::-webkit-inner-spin-button,
         input[type="number"]::-webkit-outer-spin-button { opacity: 1; }
+        input:focus, select:focus, textarea:focus { border-color: ${T.accent} !important; box-shadow: 0 0 0 3px ${T.accentSoft} !important; }
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700;800&display=swap');
         @media (max-width: 900px) {
           main { margin-left: 0 !important; padding: 16px !important; }
